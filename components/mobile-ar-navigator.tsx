@@ -15,6 +15,7 @@ interface NavigationInstruction {
 
 interface MobileARNavigatorProps {
   onClose?: () => void
+  destination?: string
 }
 
 // Simulated route with instructions - moved outside component for stability
@@ -31,13 +32,14 @@ const routeSteps: Omit<NavigationInstruction, "timestamp">[] = [
   { id: "10", text: "You have arrived at your destination", action: "arrived" },
 ]
 
-export function MobileARNavigator({ onClose }: MobileARNavigatorProps) {
+export function MobileARNavigator({ onClose, destination }: MobileARNavigatorProps) {
   const [isNavigating, setIsNavigating] = useState(false)
   const [currentInstruction, setCurrentInstruction] = useState<NavigationInstruction | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [distanceTraveled, setDistanceTraveled] = useState(0)
   const [currentStep, setCurrentStep] = useState(0)
+  const [showArrivedMessage, setShowArrivedMessage] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const instructionIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -153,6 +155,16 @@ export function MobileARNavigator({ onClose }: MobileARNavigatorProps) {
     // Stop any ongoing speech
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel()
+    }
+  }
+
+  const handleSecretArrive = () => {
+    // Immediately simulate arrival for demo purposes
+    setIsNavigating(false)
+    setCurrentInstruction({ id: "secret", text: "You have reached your destination", action: "arrived", timestamp: Date.now() })
+    setShowArrivedMessage(true)
+    if (voiceEnabled) {
+      speakInstruction("You have reached your destination")
     }
   }
 
@@ -329,7 +341,36 @@ export function MobileARNavigator({ onClose }: MobileARNavigatorProps) {
             </Button>
           )}
         </div>
+
+        {isNavigating && (
+          <div className="mt-4 flex items-center justify-center">
+            <Button
+              onClick={handleSecretArrive}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-4 rounded-full shadow-md"
+              size="lg"
+            >
+              Secret
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Destination header and success message overlays */}
+      <div className="absolute top-12 left-0 right-0 z-20 flex items-center justify-center pointer-events-none">
+        {destination && (
+          <span className="bg-black/60 text-white border border-white/10 px-4 py-2 rounded-full text-sm">
+            Navigating to: <span className="font-semibold">{destination}</span>
+          </span>
+        )}
+      </div>
+
+      {showArrivedMessage && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center">
+          <div className="bg-black/70 border border-green-500/50 px-6 py-4 rounded-xl">
+            <span className="text-green-400 text-xl font-semibold">You have reached your destination</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
